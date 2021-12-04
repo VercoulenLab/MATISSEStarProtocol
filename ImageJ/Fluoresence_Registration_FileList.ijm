@@ -1,6 +1,5 @@
 // ONLY 1 image can be used per FOV
 // check if orientation of images is the same, flip / rotation
-print("\\Clear");
 
 MOPSvsSIFT = "SIFT";
 Linear = false;
@@ -14,16 +13,15 @@ var initial_gaussian_blur = 3;
 var steps_per_scale_octave = 3;
 var minimum_image_size = 100;
 var maximum_image_size = 1500;
-var feature_descriptor_size = 8;
+var feature_descriptor_size = 4;
 var maximal_alignment_error = 10;
-
 var deltaT = "";
 
 //scale of IMC to IF resolution
-scale = 4.348; // Z1
-//scale = 3.199; // CellObserver
+//scale = 4.348; // Z1
+scale = 3.19; // CellObserver
 
-margin = 0.10; //alowed error margin scale of predicted transformation
+margin = 0.20; //alowed error margin scale of predicted transformation
 align = true;
 
 path = getDirectory("select folder");
@@ -49,13 +47,9 @@ function MakeFolder(path) {
 	}
 }
 
-//Make progress bar
-title_progress = "[Progress]";
-run("Text Window...", "name="+ title_progress +" width=35 height=5 monospaced");
-
 //Initiate logfile
 getDateAndTime(year, month, null, dayOfMonth, hour, minute, second, msec);
-datetimestring = d2s(year, 0) + "-" + month + "-" + dayOfMonth + "-" + hour + "-" + minute + "-" + second;
+datetimestring = d2s(year,0) + "-" + month + "-" + dayOfMonth + "-" + hour + "-" + minute + "-" + second;
 logfilepath = path_export + datetimestring + "_alignmentlog.txt";
 logfile = File.open(logfilepath);
 File.close(logfile);
@@ -68,16 +62,13 @@ var SelectionScaleSTD = 0;
 //Read FileList
 file_matched_path = path + "FileList.csv";
 file_matched_array_record = split(File.openAsString(file_matched_path),"\n");
-number_of_files = file_matched_array_record.length;
 //Array.show(file_matched_array_record);
 
 //Search log start position for keypoint information
 keypointsparamsLineNumber = 0;
 
 for (i_match = 1; i_match < file_matched_array_record.length; i_match++) {
-	print(title_progress, "\\Update:"+i_match+"/"+number_of_files+" ("+i_match/number_of_files*100+"%)\n"+getBar(i_match, number_of_files));
-	
-	file_matched_array_record_fields = split(file_matched_array_record[i_match], ";");
+	file_matched_array_record_fields = split(file_matched_array_record[i_match], ",");
 	
 	path_fluor = unquoteString(file_matched_array_record_fields[0]);
 	path_imc = unquoteString(file_matched_array_record_fields[1]);
@@ -87,7 +78,7 @@ for (i_match = 1; i_match < file_matched_array_record.length; i_match++) {
 	path_export_image = path_export + name_region + ".tiff";
 	print(path_export_image);
 	
-	if (!File.exists(path_export_image) || !skipifexists) {
+	if (!File.exists(path_export_image) || !skipifexists){
 		keypoints = findaligment(path_imc, path_fluor, path_keypoints, false, align, MOPSvsSIFT);
 		
 		//Search log for keypoint information
@@ -97,64 +88,53 @@ for (i_match = 1; i_match < file_matched_array_record.length; i_match++) {
 
 		string = name_region + "," + keypointsparamsOther + "," + deltaT;
 
-		if (keypoints) {
+		if (keypoints){
 			print("FOUND matching points for images");
 			//Test expected transformation is in line with image scale difference
 			ScaleTest = TestEstimatedTransformationScaleRandom(File.getName(path_imc), File.getName(path_fluor), scale, margin);
-			if (ScaleTest) {
+			if (ScaleTest){
 				print("Transformation is within alowed range");
 				getDateAndTime(year, month, null, dayOfMonth, hour, minute, second, null);
 				logstring = "matched," + string + "," + SelectionScale + "," + SelectionScaleSTD + "," + year + "-" + month + "-" + dayOfMonth + "," + hour + ":" + minute + ":" + second;
 				File.append(logstring, logfilepath);
-				if (align) {
+				if (align){
 					ID = alignIMCtoIFunscaled(path_imc, path_fluor, scale, keepopen, Linear, path_export_image, overlay);
 					if (overlay){
 						overlaysavename = path_overlay + name_region + "_Overlay.jpg";
 						overlayalignedIF(ID, overlaysavename);
 					}
 				}
-			} else {
+			} else{
 				print("Transformation is outside range");
 				getDateAndTime(year, month, null, dayOfMonth, hour, minute, second, null);
 				logstring = "invalid," + string + "," + SelectionScale + "," + SelectionScaleSTD + "," + year + "-" + month + "-" + dayOfMonth + "," + hour + ":" + minute + ":" + second;
 				File.append(logstring, logfilepath);
-				if (!keepopen) { //if no maches, and if image no longer needed, close it
-					if (isOpen(File.getName(path_fluor))) {
-						selectWindow(File.getName(path_fluor));
-						close();
-					}
-				}
-				if (isOpen(File.getName(path_imc))) { //if no matches, close mcd image
-					selectWindow(File.getName(path_imc));
-					close();
-				}
 			}
-		} else {
+		} else{
 			print("No keypoints found");
 			getDateAndTime(year, month, null, dayOfMonth, hour, minute, second, null);
 			logstring = "failed," + string + ",NULL,NULL," + year + "-" + month + "-" + dayOfMonth + "," + hour + ":" + minute + ":" + second;
 			File.append(logstring, logfilepath);
-			if (!keepopen) { //if no maches, and if image no longer needed, close it
-				if (isOpen(File.getName(path_fluor))) {
+			if (!keepopen){ //if no maches, and if image no longer needed, close it
+				if (isOpen(File.getName(path_fluor))){
 					selectWindow(File.getName(path_fluor));
 					close();
 				}
 			}
-			if (isOpen(File.getName(path_imc))) { //if no matches, close mcd image
+			if (isOpen(File.getName(path_imc))){ //if no matches, close mcd image
 				selectWindow(File.getName(path_imc));
 				close();
 			}
 		}
-	} else {
+	} else{
 		print("Output exists");
 	}
 	PurgeGarbage();
 }
-print(title_progress, "\\Close");
 print("ALL alignments DONE!");
 
 if (morphfeat){
-	print("Will now generate Morph Feat");
+	print("Will now generate Morph Feat, and copy to server.");
 	runMacro("/IF macro/IF-DAPI-FeaturGen.ijm", exportifpath);
 	print("MorphFeat complete");
 }
@@ -179,44 +159,33 @@ function TestEstimatedTransformationScaleRandom(imcimage, ifimage, scale, margin
 	getSelectionCoordinates(Sxpoints, Sypoints);
 	selectWindow(ifimage);
 	getSelectionCoordinates(Txpoints, Typoints);
-	
+
 	random("seed", 14);
 	length = Sxpoints.length-1;
 	ScaleArray = newArray();
-	
-	//for random sets of points measure distance and calculate scale, 1/3 of all points
-	if (length < 20) {
-		n = 5;
-	} else {
-		n = round(Sxpoints.length/3);
-	}
-	
-	for (i = 0; i < n; i++) {
-		I1 = round((length)*random());
-		I2 = round((length)*random());
+
+	//for 25 random sets of points measure distance and calculate scale
+	for (i = 0; i < 25; i++) {
+		I1 = parseInt((length)*random());
+		I2 = parseInt((length)*random());
 		
 		SourceDist = CalcDistance(Sxpoints, Sypoints, I1, I2);
 		TargetDist = CalcDistance(Txpoints, Typoints, I1, I2);
-
-		if (SourceDist > 0 && TargetDist > 0) {
-			ScaleArray = Array.concat(ScaleArray, TargetDist/SourceDist);
-		}
+		
+		ScaleArray = Array.concat(ScaleArray, TargetDist/SourceDist);
 	}
-	Array.show(ScaleArray);
+	
 	Array.getStatistics(ScaleArray, min, max, mean, stdDev);
+	print("MEAN " + mean);
+	print("stdDev " + stdDev);
 	LimitScaleLower = scale*(1-margin);
 	LimitScaleUpper = scale*(1+margin);
-	
-	//print("MEAN: " + mean + " above: " + LimitScaleLower + " below: " + LimitScaleUpper);
-	print("MEAN: " + getBarMinMax(LimitScaleLower, LimitScaleUpper, mean) + " " + mean);
-	print("stdDev: " + stdDev + " below: " + 0.3);
-	
 	SelectionScale = mean;
 	SelectionScaleSTD = stdDev;
 	
-	if (mean >= LimitScaleLower && mean <= LimitScaleUpper && stdDev < 0.3) {
+	if (mean >= LimitScaleLower && mean <= LimitScaleUpper && stdDev < 0.1){
 		return true;
-	} else {
+	}else{
 		return false;
 	}
 }
@@ -228,62 +197,22 @@ function CalcDistance(Xpoints, Ypoints, I1, I2) {
 	return dist;
 }
 
-function getBarMinMax(min, max, actual) {
-	n = 50; // resolution
-	percentage = 1-(max - actual)/(max - min);
-	index = round(n*(percentage));
-	//if (index < 1) index = 1;
-	if (index > n-1) index = n-1;
-	string = "[";
-	separator = "<|>";
-	for (i = 0; i < n; i++) {
-		if (i == index) {
-			string = string + separator;
-		} else {
-			string = string + " ";
-		}
-	}
-	string = string + "]";
-	
-	if (actual < min) string = "[          too LOW          ]";
-	if (actual > max) string = "[          too HIGH         ]";
-	
-	return string;
-}
-
-function getBar(p1, p2) {
-	n = 20;
-	bar1 = "--------------------";
-	bar2 = "********************";
-	index = round(n*(p1/p2));
-	if (index<1) index = 1;
-	if (index>n-1) index = n-1;
-	return substring(bar2, 0, index) + substring(bar1, index+1, n);
-}
-
-function overlayalignedIF(id, overlaysavename) {
+function overlayalignedIF(id, overlaysavename){
 	//prep IR193 image
 	selectWindow("scaled");
-	resetMinAndMax;
 	run("Enhance Contrast", "saturated=0.35");
-	getMinAndMax(null, max);
-	setMinAndMax(0, max);
-	
 	//prepare IF image
 	selectImage(id);
 	rename("iffile");
 	getDimensions(width, height, null, null, null);
-	//run("16-bit");
-	resetMinAndMax;
+	run("16-bit");
 	run("Enhance Contrast", "saturated=0.35");
-	
 	//make keypoint image
 	newImage("Points", "8-bit black", width, height, 1);
 	roiManager("select", 2); //select scaled keypoint data
 	setForegroundColor(255, 255, 255);
 	run("Draw", "slice"); run("Dilate"); run("Dilate");
 	run("16-bit");
-	
 	//make composite
 	run("Merge Channels...", "c1=scaled c3=iffile c4=Points create");
 	save(overlaysavename);
@@ -342,7 +271,7 @@ function alignIMCtoIFunscaled(imcfile, iffile, scale, keepopen, Linear, savename
 	roiManager("select", 0);
 	run("Scale... ", "x=["+scale+"] y=["+scale+"]"); 
 	roiManager("add");
-	
+
 	iffile = File.getName(iffile);
 	if (Linear){
 		run("Landmark Correspondences", "source_image=["+iffile+"] template_image=scaled transformation_method=[Least Squares] alpha=1 mesh_resolution=32 transformation_class=Similarity interpolate");
@@ -353,11 +282,13 @@ function alignIMCtoIFunscaled(imcfile, iffile, scale, keepopen, Linear, savename
 	selectWindow("Transformed" + iffile);
 	save(savename);
 	ID = getImageID();
-	if (!keepopen){ //close template IF image if not further alignments to be done
+	if (!keepopen){
+ //close template IF image if not further alignments to be done
 		selectWindow(iffile);
 		close();
 	}
-	if (!overlay){
+	
+if (!overlay){
 		//clear roi manager after success full alignment
 		roiManager("reset");
 		selectWindow("scaled");
@@ -368,19 +299,14 @@ function alignIMCtoIFunscaled(imcfile, iffile, scale, keepopen, Linear, savename
 	}
 	return ID;
 }
-
+
+
 function findaligment(source, target, roisavepath, keepopen, align, MOPSvsSIFT){
 	if (!isOpen(File.getName(source))){
 		open(source);
-		resetMinAndMax;
-		run("Enhance Contrast", "saturated=0.35");
-		getMinAndMax(null, max);
-		setMinAndMax(0, max);
 	}
 	if (!isOpen(File.getName(target))){
 		open(target);
-		resetMinAndMax;
-		run("Enhance Contrast", "saturated=0.35");
 		//run("Rotate 90 Degrees Right");
 		//run("Flip Horizontally");
 	}
@@ -395,13 +321,14 @@ function findaligment(source, target, roisavepath, keepopen, align, MOPSvsSIFT){
 
 	//clear roimanager
 	roiManager("reset");
-	//Find alignment keypoints for IF towards IMC
+	
+//Find alignment keypoints for IF towards IMC
 	startTime = getTime();
 	if (MOPSvsSIFT == "SIFT"){
-		run("Extract SIFT Correspondences", "source_image=["+name_target+"] target_image=["+name_source+"] initial_gaussian_blur=["+initial_gaussian_blur+"] steps_per_scale_octave=["+steps_per_scale_octave+"] minimum_image_size=["+minimum_image_size+"] maximum_image_size=["+maximum_image_size+"] feature_descriptor_size=["+feature_descriptor_size+"] feature_descriptor_orientation_bins=8 closest/next_closest_ratio=0.92 filter maximal_alignment_error=["+maximal_alignment_error+"] minimal_inlier_ratio=0.05 minimal_number_of_inliers=7 expected_transformation=Affine");
+		run("Extract SIFT Correspondences", "source_image=["+target+"] target_image=["+source+"] initial_gaussian_blur=1 steps_per_scale_octave=["+steps_per_scale_octave+"] minimum_image_size=["+minimum_image_size+"] maximum_image_size=["+maximum_image_size+"] feature_descriptor_size=["+feature_descriptor_size+"] feature_descriptor_orientation_bins=8 closest/next_closest_ratio=0.92 filter maximal_alignment_error=4 minimal_inlier_ratio=0.05 minimal_number_of_inliers=7 expected_transformation=Affine");
 	}
 	if (MOPSvsSIFT == "MOPS"){
-		run("Extract MOPS Correspondences", "source_image=["+name_target+"] target_image=["+name_source+"] initial_gaussian_blur=["+initial_gaussian_blur+"] steps_per_scale_octave=["+steps_per_scale_octave+"] minimum_image_size=["+minimum_image_size+"] maximum_image_size=["+maximum_image_size+"] feature_descriptor_size=["+feature_descriptor_size+"] closest/next_closest_ratio=0.92 maximal_alignment_error=["+maximal_alignment_error+"] inlier_ratio=0.05 expected_transformation=Affine");
+		run("Extract MOPS Correspondences", "source_image=["+target+"] target_image=["+source+"] initial_gaussian_blur=1 steps_per_scale_octave=["+steps_per_scale_octave+"] minimum_image_size=["+minimum_image_size+"] maximum_image_size=["+maximum_image_size+"] feature_descriptor_size=["+feature_descriptor_size+"] closest/next_closest_ratio=0.92 maximal_alignment_error=5 inlier_ratio=0.05 expected_transformation=Affine");
 	}
 	endTime = getTime();
 	deltaT = d2s((endTime-startTime)/1000, 0) + "s";
@@ -449,4 +376,5 @@ function ArrayUnique(array) {
    		i++;
    	}
 	return uniqueA;
-}
+}
+
