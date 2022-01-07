@@ -2,7 +2,7 @@ print("\\Clear");
 run("Select None");
 roiManager("Reset");
 
-numberofROIs = 1;
+numberofROIs = 2;
 
 //scale of IMC to IF resolution
 scale = 4.348; // Z1
