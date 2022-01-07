@@ -16,9 +16,13 @@ image_id = getImageID();
 image_path = getDirectory("image");
 image_title = getTitle();
 
-image_crop_path = image_path + "subset/";
-if (!File.exists(image_crop_path)){
-	File.makeDirectory(image_crop_path);
+image_crop_path_training = image_path + "Training/";
+image_crop_path_test = image_path + "Validation/";
+if (!File.exists(image_crop_path_training)){
+	File.makeDirectory(image_crop_path_training);
+}
+if (!File.exists(image_crop_path_test)){
+	File.makeDirectory(image_crop_path_test);
 }
 
 Dialog.create("Selection size");
@@ -96,11 +100,24 @@ for (i = 0; i < n_ROI; i++){
 	getSelectionBounds(x, y, width, height);
 	toScaled(x, y);
 	n = roi_config_length + i;
-	string = image_title + "," + d2s(x, 2) + "," + d2s(y, 2) + "," + d2s(boxsize, 0) + "," + d2s(n, 0);
-	File.append(string, path_roi_config);
-
+	//m = roi_config_length + i;
 	run("Duplicate...", "title=["+n+"]");
-	saveAs("tiff", image_crop_path + n + ".tiff");
+	
+	string = image_title + "," + d2s(x, 2) + "," + d2s(y, 2) + "," + d2s(boxsize, 0) + "," + d2s(n, 0);
+	if (i==0){
+		string = string + "," + "Training";
+		saveAs("tiff", image_crop_path_training + n + ".tiff");
+	}
+	if (i==1){
+		string = string + "," + "Validation";
+		saveAs("tiff", image_crop_path_test + n + ".tiff");
+	}
+
+	//print(string);
+    File.append(string, path_roi_config);
+	
+	//saveAs("tiff", image_crop_path_training + n + ".tiff");
+	////saveAs("tiff", image_crop_path_test + m + ".tiff");
 	close();
 }
 close();
@@ -127,3 +144,4 @@ function checkOverlap() {
 	}
 	return intersect;
 }
+
