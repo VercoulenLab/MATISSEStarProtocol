@@ -22,7 +22,7 @@ if (!File.exists(image_crop_path)){
 }
 
 Dialog.create("Selection size");
-Dialog.addNumber("Size:", 50);
+Dialog.addNumber("Size:", 158);
 Dialog.show();
 
 boxsize = Dialog.getNumber();
