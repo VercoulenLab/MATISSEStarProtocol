@@ -1,0 +1,30 @@
+CellProfiler instructions
+
+Note: first read steps 1-3. Depending on how you want to do step 3, you have to adjust the images that you have to upload in step 1.
+
+1.	In the first module (images), you have to upload your DAPI + IMC probability maps that were generated in Ilastik. Additionally, you have to upload your original DAPI images + IR193 IMC images. 
+2.	Then configure the metadata in the metadata module. Use extraction method: extract from image file headers. Then select extract metadata from images matching a rule. Add rules so all metadata is extracted from your files (For instance: file does contain IMC or file does contain DAPI – depends on your naming patterns).
+3.	Now define all variables in the NamesAndTypes module. The parameters that you need to define are the following:
+•	IF_DAPI = original DAPI image
+•	IF_prob_Edge = this is the 3rd stack of the DAPI probability map
+•	IF_prob_Nucl = this is the 2nd stack of the DAPI probability map
+•	IMC_IR193 = original IR193 IMC image
+•	IMC_prob_Nucl = This is the 3rd stack of the IMC probability map stack (for me it was 2)
+•	IMC_prob_membr = This is the 2nd stack of the IMC probability map stack (for me it was 3)
+
+You can do this step in several ways:
+-	You can make a .csv spreadsheet where you define the paths of the image stacks, and which stack needs to be taken for each variable. Then upload this .csv file in CellProfiler
+-	Alternatively, you can unstack the probability maps and saved them again with different names. In this way, you don’t have to explain the software to take a specific stack from a file. Use the unique names to define all variables. For instance:
+o	File does end with DAPI_Probabilities-0002.tif to define IF_prob_Nucl
+o	File does end with DAPI_Probabilities-0003.tif to define IF_prob_Edge
+
+4.	Click on Update and check whether all files have been matched appropriately.
+5.	In the ResizeObjects module, specify the resizing factor (depends on the microscope + objective you used. For the Z1 microscope with 20x objective, the factor is 0.2299908004)
+6.	Make sure that in all saving modules, a correct saving pattern is specified.
+7.	In the final module (ExportToSpreadsheet), make sure to select the column delimiter “Comma”, and indicate the saving folder.
+8.	All modules should now have green boxes to indicate that all modules have been specified properly. Now run the pipeline in test mode in order to see whether the desired outcome is obtained. You can click on the eye before each module to show the output from each step. 
+9.	Exit the test mode and run the pipeline (analyze images).
+
+After running the pipeline, you end up with 4 folders of images (Classification, RGB, Objects, Overlay), and 1 folder with measurements (Spreadsheet). The images you need for downstream analysis are located in the Objects folder. 
+
+If you want to know whether the detection is oke or not (and to see whether the MATISSE pipeline is better than segmentation based on only IR193), you can make an overlay of the nuclear and cell outline images located in the Overlay folder, with your IR193 images as indicated in Figure 15 of the STAR protocol.  
